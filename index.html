@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Petit Santé - 優雅な健康管理</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js (CDN) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Lucide Icons (CDN) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Vue 3 (CDN) -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <style>
+        :root {
+            --sage: #B2AC88;
+            --terracotta: #E2725B;
+            --gold: #D4AF37;
+            --offwhite: #F9F8F6;
+        }
+        body {
+            background-color: var(--offwhite);
+            font-family: 'Montserrat', sans-serif;
+            color: #444;
+        }
+        h1, h2, h3, .font-serif {
+            font-family: 'Playfair Display', serif;
+        }
+        .bg-sage { background-color: var(--sage); }
+        .text-sage { color: var(--sage); }
+        .bg-terracotta { background-color: var(--terracotta); }
+        .text-terracotta { color: var(--terracotta); }
+        .bg-gold { background-color: var(--gold); }
+        .border-sage { border-color: var(--sage); }
+        
+        /* レオ・レオニ風のテクスチャ感 */
+        .village-bg {
+            background: radial-gradient(circle at center, #F2F0E9 0%, #E8E5D8 100%);
+        }
+        .torn-edge {
+            filter: url(#ragged-edge);
+        }
+    </style>
+</head>
+<body class="pb-20">
+
+<div id="app" v-cloak>
+    <!-- Header -->
+    <header class="bg-white border-b border-stone-100 sticky top-0 z-50">
+        <div class="max-w-5xl mx-auto px-6 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-sage rounded-xl flex items-center justify-center text-white shadow-lg">
+                    <i data-lucide="sparkles"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-stone-800">Petit Santé</h1>
+            </div>
+            <nav class="hidden md:flex gap-6 text-sm font-medium text-stone-500">
+                <a href="#village" class="hover:text-sage transition-colors">村の様子</a>
+                <a href="#tracker" class="hover:text-sage transition-colors">体重管理</a>
+                <a href="#exercises" class="hover:text-sage transition-colors">宅トレ</a>
+                <a href="#recipes" class="hover:text-sage transition-colors">レシピ</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-6 pt-10 space-y-10">
+        
+        <!-- Wellness Village (Leo Lionni Style) -->
+        <section id="village" class="space-y-4">
+            <div class="flex justify-between items-end">
+                <div>
+                    <span class="text-xs font-bold uppercase tracking-widest text-sage block mb-1">Wellness Village</span>
+                    <h2 class="text-2xl font-bold text-stone-800">あなたの努力で育つ村</h2>
+                </div>
+                <div class="text-right">
+                    <p class="text-[10px] font-bold text-stone-400 uppercase">Village Level</p>
+                    <p class="text-2xl font-bold text-sage">{{ totalPoints }} <span class="text-xs">pts</span></p>
+                </div>
+            </div>
+            
+            <div class="relative w-full h-72 village-bg rounded-3xl overflow-hidden border border-stone-100 shadow-inner flex items-end justify-center pb-8">
+                <svg viewBox="0 0 400 200" class="w-full h-full max-w-md">
+                    <!-- Ground -->
+                    <path d="M0,180 Q100,170 200,180 T400,175 L400,200 L0,200 Z" fill="#E8E5D8" />
+                    
+                    <!-- Stage 0: Sprout -->
+                    <g transform="translate(200, 175)">
+                        <path v-if="villageStage >= 0" d="M-2,0 Q-5,-10 0,-15 Q5,-10 2,0 Z" fill="#B2AC88" />
+                        <circle cx="-8" cy="2" r="4" fill="#C4C1B0" />
+                    </g>
+
+                    <!-- Stage 1: Small Hut -->
+                    <g v-if="villageStage >= 1" transform="translate(170, 130)">
+                        <rect x="0" y="0" width="60" height="50" fill="#F2F0E9" rx="2" />
+                        <path d="M-10,0 L30,-30 L70,0 Z" fill="#E2725B" />
+                        <rect x="20" y="25" width="15" height="25" fill="#8E8A75" rx="1" />
+                    </g>
+
+                    <!-- Stage 2: Mouse (Frederick style) -->
+                    <g v-if="villageStage >= 2" transform="translate(130, 165)">
+                        <ellipse cx="0" cy="0" rx="12" ry="8" fill="#9E9E9E" />
+                        <circle cx="-8" cy="-6" r="5" fill="#9E9E9E" />
+                        <circle cx="-9" cy="-7" r="1.5" fill="#333" />
+                        <path d="M12,0 Q25,5 30,-5" fill="none" stroke="#9E9E9E" stroke-width="1" />
+                    </g>
+
+                    <!-- Stage 3: Tree & Bird -->
+                    <g v-if="villageStage >= 3">
+                        <g transform="translate(260, 180)">
+                            <rect x="-5" y="-60" width="10" height="60" fill="#8B7355" />
+                            <circle cx="0" cy="-70" r="30" fill="#B2AC88" opacity="0.8" />
+                        </g>
+                        <g transform="translate(270, 80)">
+                            <path d="M0,0 Q10,-10 20,0 L15,5 Q10,10 5,5 Z" fill="#D4AF37" />
+                        </g>
+                    </g>
+
+                    <!-- Stage 4: Chameleon -->
+                    <g v-if="villageStage >= 4" transform="translate(220, 110)">
+                        <path d="M0,0 Q15,-15 30,0 Q40,10 30,20 Q15,25 0,15 Z" fill="#E2725B" opacity="0.9" />
+                        <circle cx="25" cy="5" r="1.5" fill="#333" />
+                    </g>
+                </svg>
+                <div class="absolute bottom-4 left-6">
+                    <p class="text-xs italic text-stone-400 font-serif">{{ villageMessage }}</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Summary Cards -->
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 bg-white p-8 rounded-3xl shadow-sm border border-stone-100 flex flex-col md:flex-row justify-between items-center gap-6">
+                <div>
+                    <span class="text-xs font-bold text-sage uppercase tracking-widest block mb-2">Bienvenue</span>
+                    <h2 class="text-3xl font-bold text-stone-900 mb-2">健やかな毎日を</h2>
+                    <p class="text-stone-500 text-sm">優雅に、そして着実に。小さな一歩が美しい変化へ。</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-[10px] font-bold text-stone-400 uppercase">現在の体重</p>
+                    <p class="text-4xl font-bold text-sage">{{ currentWeight || '--' }}<span class="text-lg ml-1">kg</span></p>
+                </div>
+            </div>
+            
+            <div class="bg-stone-900 text-white p-8 rounded-3xl shadow-xl flex flex-col justify-between">
+                <div class="flex justify-between items-start mb-4">
+                    <h3 class="font-bold text-lg">目標のステップ</h3>
+                    <i data-lucide="target" class="text-gold"></i>
+                </div>
+                <div v-if="milestones" class="space-y-4">
+                    <div>
+                        <div class="flex justify-between text-xs mb-1 text-stone-400">
+                            <span>今日の目標</span>
+                            <span>{{ milestones.todayTarget }} kg</span>
+                        </div>
+                        <div class="h-1 bg-stone-800 rounded-full overflow-hidden">
+                            <div class="h-full bg-gold transition-all" :style="{ width: progressPercent + '%' }"></div>
+                        </div>
+                    </div>
+                    <p class="text-[10px] text-stone-500">月末までにあと {{ milestones.diffMonth }}kg の減量を目指しましょう。</p>
+                </div>
+                <p v-else class="text-stone-500 text-xs text-center py-4">目標を設定しましょう</p>
+            </div>
+        </section>
+
+        <!-- Tracker -->
+        <section id="tracker" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-2 bg-white p-6 rounded-3xl border border-stone-100 shadow-sm">
+                <h3 class="font-bold mb-4 flex items-center gap-2"><i data-lucide="history" class="text-sage"></i>体重の推移</h3>
+                <div class="h-64">
+                    <canvas id="weightChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="space-y-6">
+                <div class="bg-white p-6 rounded-3xl border border-stone-100 shadow-sm">
+                    <h3 class="font-bold mb-4 flex items-center gap-2"><i data-lucide="plus" class="text-sage"></i>体重を記録</h3>
+                    <div class="relative mb-4">
+                        <input type="number" step="0.1" v-model="newWeight" class="w-full bg-stone-50 border-none rounded-2xl px-4 py-4 text-2xl font-bold focus:ring-2 focus:ring-sage/20" placeholder="0.0">
+                        <span class="absolute right-4 top-1/2 -translate-y-1/2 font-bold text-stone-400">kg</span>
+                    </div>
+                    <button @click="addWeight" class="w-full bg-sage text-white py-3 rounded-full font-bold hover:opacity-90 transition-opacity">記録する</button>
+                </div>
+
+                <div class="bg-white p-6 rounded-3xl border border-stone-100 shadow-sm">
+                    <h3 class="font-bold mb-4 flex items-center gap-2"><i data-lucide="target" class="text-sage"></i>目標設定</h3>
+                    <div class="space-y-3">
+                        <input type="number" v-model="goalInput.weight" class="w-full bg-stone-50 border-none rounded-xl px-4 py-2 text-sm" placeholder="目標体重 (kg)">
+                        <input type="date" v-model="goalInput.date" class="w-full bg-stone-50 border-none rounded-xl px-4 py-2 text-sm">
+                        <button @click="updateGoal" class="w-full border border-stone-200 text-stone-600 py-2 rounded-full text-sm font-bold hover:bg-stone-50">更新</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Exercises -->
+        <section id="exercises" class="space-y-6">
+            <div class="flex justify-between items-center">
+                <h2 class="text-2xl font-bold text-stone-800">宅トレガイド</h2>
+                <span class="text-xs bg-stone-100 px-3 py-1 rounded-full text-stone-400">{{ completedExercisesCount }} / 4 完了</span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div v-for="ex in exercises" :key="ex.id" @click="toggleExercise(ex)" :class="['p-5 rounded-3xl border transition-all cursor-pointer relative overflow-hidden', ex.completed ? 'bg-sage/10 border-sage/30' : 'bg-white border-stone-100']">
+                    <div :class="['w-10 h-10 rounded-xl flex items-center justify-center mb-3', ex.completed ? 'bg-sage text-white' : 'bg-stone-50 text-stone-400']">
+                        <i :data-lucide="ex.completed ? 'check-circle-2' : 'dumbbell'"></i>
+                    </div>
+                    <h4 class="font-bold text-sm mb-1" :class="ex.completed ? 'text-sage' : 'text-stone-800'">{{ ex.label }}</h4>
+                    <p class="text-[10px] text-stone-400 leading-relaxed">{{ ex.tip }}</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Recipes -->
+        <section id="recipes">
+            <div class="bg-stone-50/50 p-8 rounded-3xl border-2 border-dashed border-stone-200">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                    <div class="space-y-6">
+                        <h3 class="text-xl font-bold flex items-center gap-2"><i data-lucide="chef-hat" class="text-sage"></i>冷蔵庫レシピ</h3>
+                        <p class="text-sm text-stone-500">食材を教えてください。AIがヘルシーな一皿をご提案します。</p>
+                        <textarea v-model="ingredients" class="w-full h-32 bg-white border border-stone-200 rounded-2xl p-4 text-sm focus:ring-2 focus:ring-sage/20 resize-none" placeholder="例：ほうれん草、鶏むね肉、レモン..."></textarea>
+                        <button @click="generateRecipe" :disabled="isGenerating" class="w-full bg-terracotta text-white py-4 rounded-full font-bold shadow-lg shadow-terracotta/20 flex items-center justify-center gap-2">
+                            <i v-if="!isGenerating" data-lucide="utensils-crossed"></i>
+                            <span v-if="isGenerating" class="animate-spin border-2 border-white border-t-transparent rounded-full w-4 h-4"></span>
+                            {{ isGenerating ? '作成中...' : 'ヘルシーレシピを生成' }}
+                        </button>
+                    </div>
+                    <div class="bg-white rounded-3xl p-6 min-h-[300px] border border-stone-100 shadow-inner overflow-auto">
+                        <div v-if="recipe" class="prose prose-sm text-stone-700 whitespace-pre-wrap">{{ recipe }}</div>
+                        <div v-else class="h-full flex flex-col items-center justify-center text-stone-300">
+                            <i data-lucide="chef-hat" class="w-12 h-12 mb-4 opacity-20"></i>
+                            <p class="text-sm">こちらにレシピが表示されます</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="mt-20 py-10 border-t border-stone-100 text-center">
+        <p class="text-xs font-bold text-stone-400 uppercase tracking-widest">Petit Santé</p>
+        <p class="text-[10px] text-stone-300 mt-2">© 2026 Petit Santé Atelier.</p>
+    </footer>
+</div>
+
+<script>
+const { createApp, ref, computed, onMounted, watch } = Vue;
+
+createApp({
+    setup() {
+        const weightLogs = ref(JSON.parse(localStorage.getItem('ps_logs') || '[]'));
+        const goals = ref(JSON.parse(localStorage.getItem('ps_goals') || 'null'));
+        const totalPoints = ref(parseInt(localStorage.getItem('ps_points') || '0'));
+        const exercises = ref([
+            { id: 'walking', label: '20分ウォーキング', tip: '心拍数を少し上げるくらいのペースで。', completed: false },
+            { id: 'squats', label: 'スクワット', tip: 'かかとに重心を置き、椅子に座るイメージで。', completed: false },
+            { id: 'plank', label: 'プランク', tip: '頭からかかとまで一直線を意識しましょう。', completed: false },
+            { id: 'lunges', label: 'ランジ', tip: '前足の膝がつま先より前に出ないように。', completed: false }
+        ]);
+        
+        const newWeight = ref('');
+        const goalInput = ref({ weight: '', date: '' });
+        const ingredients = ref('');
+        const recipe = ref('');
+        const isGenerating = ref(false);
+        let chart = null;
+
+        const currentWeight = computed(() => weightLogs.value.length ? weightLogs.value[weightLogs.value.length - 1].weight : null);
+        
+        const villageStage = computed(() => {
+            if (totalPoints.value < 11) return 0;
+            if (totalPoints.value < 31) return 1;
+            if (totalPoints.value < 61) return 2;
+            if (totalPoints.value < 101) return 3;
+            return 4;
+        });
+
+        const villageMessage = computed(() => {
+            const msgs = [
+                "静かな庭に、何かが芽生えようとしています...",
+                "小さな家が建ちました。誰かが来るかもしれません。",
+                "ネズミが遊びに来ました。村が賑やかになります。",
+                "木が育ち、小鳥のさえずりが聞こえてきます。",
+                "色鮮やかな仲間も加わり、理想の村が完成しました。"
+            ];
+            return msgs[villageStage.value];
+        });
+
+        const milestones = computed(() => {
+            if (!goals.value || !weightLogs.value.length) return null;
+            const start = new Date(goals.value.startDate);
+            const end = new Date(goals.value.targetDate);
+            const today = new Date();
+            const totalDays = (end - start) / (1000 * 60 * 60 * 24);
+            const daysPassed = (today - start) / (1000 * 60 * 60 * 24);
+            if (totalDays <= 0) return null;
+            const rate = (goals.value.initialWeight - goals.value.targetWeight) / totalDays;
+            return {
+                todayTarget: (goals.value.initialWeight - (rate * daysPassed)).toFixed(1),
+                diffMonth: (rate * 30).toFixed(1)
+            };
+        });
+
+        const progressPercent = computed(() => {
+            if (!goals.value || !currentWeight.value) return 0;
+            const total = goals.value.initialWeight - goals.value.targetWeight;
+            const current = goals.value.initialWeight - currentWeight.value;
+            return Math.max(0, Math.min(100, (current / total) * 100));
+        });
+
+        const completedExercisesCount = computed(() => exercises.value.filter(e => e.completed).length);
+
+        const initChart = () => {
+            const ctx = document.getElementById('weightChart').getContext('2d');
+            const labels = Array.from({length: 7}, (_, i) => {
+                const d = new Date();
+                d.setDate(d.getDate() - (6 - i));
+                return `${d.getMonth() + 1}/${d.getDate()}`;
+            });
+            
+            const data = labels.map(label => {
+                const log = weightLogs.value.find(l => {
+                    const ld = new Date(l.date);
+                    return `${ld.getMonth() + 1}/${ld.getDate()}` === label;
+                });
+                return log ? log.weight : null;
+            });
+
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: '体重 (kg)',
+                        data,
+                        borderColor: '#B2AC88',
+                        backgroundColor: 'rgba(178, 172, 136, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 3,
+                        pointBackgroundColor: '#B2AC88'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { grid: { display: false } }, x: { grid: { display: false } } }
+                }
+            });
+        };
+
+        const addWeight = () => {
+            const w = parseFloat(newWeight.value);
+            if (isNaN(w)) return;
+            const date = new Date().toISOString().split('T')[0];
+            const idx = weightLogs.value.findIndex(l => l.date === date);
+            if (idx >= 0) weightLogs.value[idx].weight = w;
+            else {
+                weightLogs.value.push({ date, weight: w });
+                totalPoints.value += 2;
+            }
+            newWeight.value = '';
+            updateChart();
+        };
+
+        const updateGoal = () => {
+            if (!goalInput.value.weight || !goalInput.value.date) return;
+            goals.value = {
+                initialWeight: currentWeight.value || 60,
+                targetWeight: parseFloat(goalInput.value.weight),
+                targetDate: goalInput.value.date,
+                startDate: new Date().toISOString().split('T')[0]
+            };
+        };
+
+        const toggleExercise = (ex) => {
+            ex.completed = !ex.completed;
+            if (ex.completed) totalPoints.value += 1;
+        };
+
+        const updateChart = () => {
+            if (!chart) return;
+            const labels = chart.data.labels;
+            chart.data.datasets[0].data = labels.map(label => {
+                const log = weightLogs.value.find(l => {
+                    const ld = new Date(l.date);
+                    return `${ld.getMonth() + 1}/${ld.getDate()}` === label;
+                });
+                return log ? log.weight : null;
+            });
+            chart.update();
+        };
+
+        const generateRecipe = async () => {
+            if (!ingredients.value.trim()) return;
+            isGenerating.value = true;
+            try {
+                // Note: Gemini API key should be handled securely. 
+                // For a CDN version, we assume the environment provides it or it's a demo.
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=YOUR_API_KEY_HERE`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: `${ingredients.value}を使ったヘルシーレシピを日本語で作成してください。` }] }]
+                    })
+                });
+                const data = await response.json();
+                recipe.value = data.candidates[0].content.parts[0].text;
+            } catch (e) {
+                recipe.value = "レシピの生成に失敗しました。APIキーの設定を確認してください。";
+            } finally {
+                isGenerating.value = false;
+            }
+        };
+
+        watch([weightLogs, goals, totalPoints], () => {
+            localStorage.setItem('ps_logs', JSON.stringify(weightLogs.value));
+            localStorage.setItem('ps_goals', JSON.stringify(goals.value));
+            localStorage.setItem('ps_points', totalPoints.value.toString());
+        }, { deep: true });
+
+        onMounted(() => {
+            lucide.createIcons();
+            initChart();
+        });
+
+        return {
+            weightLogs, goals, totalPoints, exercises, newWeight, goalInput, ingredients, recipe, isGenerating,
+            currentWeight, villageStage, villageMessage, milestones, progressPercent, completedExercisesCount,
+            addWeight, updateGoal, toggleExercise, generateRecipe
+        };
+    }
+}).mount('#app');
+</script>
+
+</body>
+</html>
